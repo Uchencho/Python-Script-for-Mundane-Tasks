@@ -17,6 +17,10 @@ data.columns = data.iloc[0]
 #Remove the first row of the data
 data = data[1:]
 
+#Return only paid and completed orders
+lists = ['Completed', 'Paid']
+data = data[data[' Order Status '].isin(lists)]
+
 #Set two columns to datetime objects
 data[" Purchase Time "] = pd.to_datetime(data[" Purchase Time "])
 data[' Payment Time '] = pd.to_datetime(data[' Payment Time '])

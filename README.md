@@ -1,7 +1,7 @@
 # Excel-Script-for-Mundane-Tasks
-The script is designed to perform some Repetitive, yet Mundane tasks.
+The python script is designed to perform some Repetitive, yet Mundane tasks.
 
-The script performs the following tasks:
+The python script performs the following tasks:
 __It converts the payment date and purchase date strings to date format__
 
 __It corrects the worng calculation done on some columns__

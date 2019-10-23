@@ -1,5 +1,7 @@
 #import necessary libraries
 
+print("   Welcome \n   Processing..... ")
+
 import pandas as pd
 import numpy as np
 import os
@@ -11,46 +13,58 @@ import matplotlib.style as style
 style.use('fivethirtyeight')
 
 print('Ensure file editing is activated')
+print('   ')
 print('For clarity, ensure file is in a near-empty folder')
 
 file = input('Select file: ')
 
-#Load file into pandas df
-data = pd.read_excel(file)
+print(" \n Please hold on while processed file is created. The size of the inputted file can affect how long the program takes \n")
 
-#Set the column names to the first row
-data.columns = data.iloc[0]
 
-#Remove the first row of the data
-data = data[1:]
+def load_and_clean(file):
+    '''
+        This function takes in the dataset and performs some cleaning on the column names
+    '''
+    
+    #Load file into pandas df
+    data = pd.read_excel(file)
 
-#Return only paid and completed orders
-lists = ['Completed', 'Paid']
-data = data[data[' Order Status '].isin(lists)]
+    #Set the column names to the first row
+    data.columns = data.iloc[0]
 
-#Strip column names off white space for easy analysis
-columns = data.columns
-columns = list(columns)
-data.columns = [x.strip() for x in columns]
-data.columns
+    #Remove the first row of the data
+    data = data[1:]
 
-#Set two columns to datetime objects
-data["Purchase Time"] = pd.to_datetime(data["Purchase Time"])
-data['Payment Time'] = pd.to_datetime(data['Payment Time'])
+    #Return only paid and completed orders
+    lists = ['Completed', 'Paid']
+    data = data[data[' Order Status '].isin(lists)]
 
-#Return the long date format that is easily processed with Excel
-data['Purchase Date'] = data['Purchase Time'].dt.date
-data['Payment Date'] = data['Payment Time'].dt.date
+    #Strip column names off white space for easy analysis
+    columns = data.columns
+    columns = list(columns)
+    data.columns = [x.strip() for x in columns]
 
-#Delete specific columns that are unnecessary
-del (data['Comments'], data['Shipping Address'], data['Agent Address'], data['Payment Time'], data['Purchase Time'])
+    #Set two columns to datetime objects
+    data["Purchase Time"] = pd.to_datetime(data["Purchase Time"])
+    data['Payment Time'] = pd.to_datetime(data['Payment Time'])
 
-#Order the columns in a desired way
-data = data[['Purchase Date', 'Payment Date', 'Member ID', 'Member Name', 'Order Flow', 'Order Type',
+    #Return the long date format that is easily processed with Excel
+    data['Purchase Date'] = data['Purchase Time'].dt.date
+    data['Payment Date'] = data['Payment Time'].dt.date
+
+    #Delete specific columns that are unnecessary
+    del (data['Comments'], data['Shipping Address'], data['Agent Address'], data['Payment Time'], data['Purchase Time'])
+
+    #Order the columns in a desired way
+    data = data[['Purchase Date', 'Payment Date', 'Member ID', 'Member Name', 'Order Flow', 'Order Type',
        'Order Status', 'total amount', 'discount amount', 'Total PV',
        'Amount due', 'Actual Payment Amount', 'Invoice Number',
        'Logistics Status', 'product name', 'product quantity', 'Unit Price',
        'PV', 'Actual payment unit price']]
+
+    return data
+
+data = load_and_clean(file)
 
 #Extract the filename and extension
 filename = os.path.splitext(file)[0]
@@ -76,41 +90,51 @@ writer.save()
 obi = pd.read_excel(new_file, sheet_name="Order by Invoice")
 obp = pd.read_excel(new_file, sheet_name="Order by Product")
 
-#Delete the columns that are unnecessary for each sheet
-del (obi['product name'], obi['product quantity'], obi['Unit Price'], obi['Actual payment unit price'], obi['PV'])
-del (obp['Amount due'])
+def sheet_analysis(obi, obp):
+    '''
+        This function takes into two dataframes as input and performs manual calculation on them
+        '''
 
-#Set the columns to float type object after removing the currency sign from each of the specified columns
-obi['total amount'] = obi['total amount'].str[1:].astype('float64')
-obi['Amount due'] = obi['Amount due'].str[1:].astype('float64')
-obi['Actual Payment Amount'] = obi['Actual Payment Amount'].str[1:].astype('float64')
+    #Delete the columns that are unnecessary for each sheet
+    del (obi['product name'], obi['product quantity'], obi['Unit Price'], obi['Actual payment unit price'], obi['PV'])
+    del (obp['Amount due'])
 
-obp['Unit Price'] = obp['Unit Price'].str[1:].astype('float64')
-obp['Actual Payment Amount'] = obp['Actual Payment Amount'].str[1:].astype('float64')
-obp['Actual payment unit price'] = obp['Actual payment unit price'].str[1:].astype('float64')
+    #Set the columns to float type object after removing the currency sign from each of the specified columns
+    obi['total amount'] = obi['total amount'].str[1:].astype('float64')
+    obi['Amount due'] = obi['Amount due'].str[1:].astype('float64')
+    obi['Actual Payment Amount'] = obi['Actual Payment Amount'].str[1:].astype('float64')
 
-#Perform some calculations on some specific columns
-obi['discount amount'] = obi['total amount'] - obi['Actual Payment Amount']
+    obp['Unit Price'] = obp['Unit Price'].str[1:].astype('float64')
+    obp['Actual Payment Amount'] = obp['Actual Payment Amount'].str[1:].astype('float64')
+    obp['Actual payment unit price'] = obp['Actual payment unit price'].str[1:].astype('float64')
 
-obp['Total PV'] = obp['product quantity'] * obp['PV']
-obp['total amount'] = obp['product quantity'] * obp['Unit Price']
-obp['Actual Payment Amount'] = obp['product quantity'] * obp['Actual payment unit price']
-obp['discount amount'] = obp['total amount'] - obp['Actual Payment Amount']
+    #Perform some calculations on some specific columns
+    obi['discount amount'] = obi['total amount'] - obi['Actual Payment Amount']
 
-#Drop the rows with duplicates from the "Order flow" column, do this for only one dataframe
-obi = obi.drop_duplicates(['Order Flow'])
+    obp['Total PV'] = obp['product quantity'] * obp['PV']
+    obp['total amount'] = obp['product quantity'] * obp['Unit Price']
+    obp['Actual Payment Amount'] = obp['product quantity'] * obp['Actual payment unit price']
+    obp['discount amount'] = obp['total amount'] - obp['Actual Payment Amount']
 
-#Order the columns in a desired way
-obi = obi[['Purchase Date', 'Payment Date', 'Member ID', 'Member Name',
+    #Drop the rows with duplicates from the "Order flow" column, do this for only one dataframe
+    obi = obi.drop_duplicates(['Order Flow'])
+
+    #Order the columns in a desired way
+    obi = obi[['Purchase Date', 'Payment Date', 'Member ID', 'Member Name',
        'Order Flow', 'Order Type', 'Order Status', 'Invoice Number', 'Logistics Status', 'total amount',
        'Total PV', 'Amount due', 'Actual Payment Amount', 'discount amount']]
 
-obp = obp[['Purchase Date', 'Payment Date', 'Member ID', 'Member Name',
+    obp = obp[['Purchase Date', 'Payment Date', 'Member ID', 'Member Name',
        'Order Flow', 'Order Type', 'Order Status', 'Invoice Number', 'Logistics Status',
        'product name', 'product quantity', 'Unit Price', 'PV',
        'Actual payment unit price', 'Total PV', 'total amount',
        'discount amount', 
        'Actual Payment Amount']]
+
+    return obi, obp
+
+#Run the function created above
+obi, obp = sheet_analysis(obi,obp)
 
 #Account for duplicate members who opened two accounts(e.g Haruna 1 and Haruna 2)
 modified = obp.copy()
@@ -156,6 +180,8 @@ lighting_pv.to_excel(writer,'Lighting Pivot')
 
 writer.save()
 
+print('\n Edited excel file has been created \n The images will now be processed \n ')
+
 #Create directory for images
 the_folder = os.path.join(pth, filename+'_images')
 os.mkdir(the_folder)
@@ -165,9 +191,9 @@ os.chdir(the_folder)
 #Save the result of the pivot as an image
 member_pv['Actual Payment Amount'].head(5).plot(kind = 'bar',
                title = 'Top Five Members by Sales',
-               figsize = (16,12),
+               figsize = (25,15),
                legend = False,
-               rot = 25,
+               rot = 0,
                 )
 
 plt.grid()
@@ -177,20 +203,21 @@ plt.savefig('Member.png')
 by_date = modified.pivot_table(values=['Actual Payment Amount','product quantity'], 
                              index = 'Payment Date', aggfunc=np.sum).sort_index()
 
-by_date['Actual Payment Amount'].plot(figsize=(16,12))
+by_date['Actual Payment Amount'].plot(figsize=(15,10))
 plt.grid()
 plt.title('Total Sales Done Daily')
 plt.axhline(max(by_date['Actual Payment Amount']), label='Maximum value', color='Red')
 plt.legend()
+plt.xlabel("Payment Date from 1st till 31st of the Month")
 plt.savefig('Sales Income by Date.png')
 
 #Top 5 Products
 top_ten_prod.head(5).plot(kind = 'bar',
                title = 'Top Five Selling Products',
-               figsize = (16,12),
+               figsize = (25,15),
                colormap = plt.cm.BuPu_r,
                legend = False,
-               rot = 25
+               rot = 0
                 )
 plt.xlabel('Product SKU')
 plt.grid()
@@ -198,11 +225,11 @@ plt.legend()
 plt.savefig('Best selling Products.png')
 
 #bottom ten product image
-bot_ten_prod.plot(kind = 'bar',
-               title = 'Bottom Ten Selling Products',
-               figsize = (16,12),
+bot_ten_prod.tail(5).plot(kind = 'bar',
+               title = 'Bottom Five Selling Products',
+               figsize = (25,15),
                legend = False,
-               rot = 25,
+               rot = 0,
                colormap = plt.cm.Reds_r
                 )
 plt.xlabel('Product SKU')
@@ -211,9 +238,9 @@ plt.legend()
 plt.savefig('Bottom selling Products.png')
 
 #fan category image
-fan_ac['Actual Payment Amount'].plot(kind = 'bar',
+fan_ac.plot(kind = 'bar',
                title = 'Sales From Fan and AC Category',
-               figsize = (16,12),
+               figsize = (15,10),
                legend = False,
                colormap = plt.cm.Blues_r,
                rot = 0
@@ -226,17 +253,17 @@ plt.savefig('Fan and AC.png')
 #lighting image
 lighting_pv.plot(kind = 'bar',
                title = 'Sales From Lighting Category',
-               figsize = (16,12),
+               figsize = (15,10),
                legend = False,
                rot = 0,
                colormap = plt.cm.RdYlBu_r
                 )
 plt.xlabel('Category')
-plt.ylabel('Income(Tens of millions)')
+plt.ylabel('Income')
 plt.grid()
 plt.legend()
 plt.savefig('lighting_cat.png')
 
-print('Completed')
-print('Excel workbook and folder with images in them have been created')
+print('Completed \n ')
+print('Excel workbook and folder containing images have been created \n ')
 print('Thank you for using this program')

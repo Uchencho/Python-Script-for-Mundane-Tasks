@@ -17,8 +17,4 @@ __It orders the columns in an order of my choosing__
 
 __It deletes some columns that are unnecessary__
 
-__It splits the woorkbook into two sheets__
-
-__It converts some columns into float type object to allow for calculations to be done on them.__
-
-__It removes duplicates based on of the columns and saves the result in one of the sheets__
+__It splits the woorkbook into several sheets__

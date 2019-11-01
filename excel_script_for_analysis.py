@@ -12,11 +12,10 @@ import matplotlib.pyplot as plt
 import matplotlib.style as style
 style.use('fivethirtyeight')
 
-print('Ensure file editing is activated')
-print('   ')
+print('Ensure file editing is activated \n ')
 print('For clarity, ensure file is in a near-empty folder')
 
-file = input('Select file: ')
+file = input('Paste file path here: ')
 
 print(" \n Please hold on while processed file is created. The size of the inputted file can affect how long the program takes \n")
 
